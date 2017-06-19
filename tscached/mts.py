@@ -62,17 +62,17 @@ class MTS(DataCache):
             The second threshold (gc_expiry) prevents frequent (and expensive!) list slicing.
             :return: False if no change; datetime.datetime of new beginning otherwise.
         """
-        if not self.result or len(self.result['values']) == 0:
-            logging.error('ttl_expire: MTS None, or contained no data points! ' + self.get_key())
-            return False
+        #if not self.result or len(self.result['values']) == 0:
+        #    logging.error('ttl_expire: MTS None, or contained no data points! ' + self.get_key())
+        #    return False
 
-        first_value_dt = datetime.datetime.fromtimestamp(self.result['values'][0][0] / 1000)
-        gc_expiry_dt = datetime.datetime.now() - datetime.timedelta(seconds=self.gc_expiry)
-        if first_value_dt < gc_expiry_dt:
-            logging.info('Expiring old data for MTS ' + self.get_key())
-            expiry_dt = datetime.datetime.now() - datetime.timedelta(seconds=self.expiry)
-            self.result['values'] = list(self.robust_trim(expiry_dt, end=None))
-            return expiry_dt
+        #first_value_dt = datetime.datetime.fromtimestamp(self.result['values'][0][0] / 1000)
+        #gc_expiry_dt = datetime.datetime.now() - datetime.timedelta(seconds=self.gc_expiry)
+        #if first_value_dt < gc_expiry_dt:
+        #    logging.info('Expiring old data for MTS ' + self.get_key())
+        #    expiry_dt = datetime.datetime.now() - datetime.timedelta(seconds=self.expiry)
+        #    self.result['values'] = list(self.robust_trim(expiry_dt, end=None))
+        #    return expiry_dt
         return False
 
     def merge_at_end(self, new_mts, cutoff=10):

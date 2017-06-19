@@ -181,7 +181,11 @@ def warm(config, redis_client, kquery, kairos_time_range, range_needed):
                 # This seems the only case where too-old data should be removed.
                 expiry = old_mts.ttl_expire()
                 if expiry:
+                    logging.info("evicted data")
+                    # We need to make sure there are no entries before expiry since we've deleted the data.
+                    start_times = [elem for elem in start_times if elem > expiry]
                     start_times.append(expiry)
+                    logging.info("new expiry = %s" % (expiry))
 
             elif range_needed[2] == FETCH_BEFORE:
                 start_times.append(range_needed[0])
@@ -197,6 +201,7 @@ def warm(config, redis_client, kquery, kairos_time_range, range_needed):
         success_count = len(filter(lambda x: x is True, result))
         logging.info("MTS write pipeline: %d of %d successful" % (success_count, len(result)))
 
+        logging.info("modifying kquery with start_times = %s" % (start_times))
         kquery.upsert(min(start_times), max(end_times))
     except redis.exceptions.RedisError as e:
         # Sneaky edge case where Redis fails after reading but before writing. Still return data!

@@ -6,7 +6,7 @@ tscached:
         default_expire: 10800  # 3 hours
 
     kairosdb:
-        host: "localhost"
+        host: "ss-kairos-0801.iad.smartsheet.com"
         port: 8080
 
     webapp:
@@ -22,9 +22,9 @@ tscached:
 
     data:
         default_expiry: 10800  # 3 hours, in seconds
-        expected_resolution: 10000  # in milliseconds
+        expected_resolution: 60000  # in milliseconds
         acceptable_skew: 6  # for merging purposes
-        staleness_threshold: 10  # data up to this far in the past is "new"
+        staleness_threshold: 30  # data up to this far in the past is "new"
 
     chunking:
         chunk_length: 3600  # chunk on 1 hour intervals
