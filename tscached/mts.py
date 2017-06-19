@@ -50,6 +50,7 @@ class MTS(DataCache):
             mts_key_dict['group_by'] = self.result['group_by']
         if self.result.get('aggregators'):
             mts_key_dict['aggregators'] = self.result['aggregators']
+        mts_key_dict['query'] = self.query_mask
         mts_key_dict['name'] = self.result['name']
         return mts_key_dict
 

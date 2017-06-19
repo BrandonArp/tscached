@@ -95,3 +95,7 @@ def handle_tagvalues():
 def handle_metaquery():
     return metadata_caching(app.config['tscached'], 'metaquery', '/api/v1/datapoints/query/tags',
                             request.data)
+
+@app.route('/api/v1/health/check', methods=['GET'])
+def handle_healthcheck():
+    return '', 204, {'Content-Type': 'application/json'}
