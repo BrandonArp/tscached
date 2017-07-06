@@ -1,4 +1,5 @@
 import logging
+import re
 
 from flask import request
 import redis
@@ -38,7 +39,7 @@ def metadata_caching(config, name, endpoint, post_data=None):
 
     if get_result:  # hit. no need to process the JSON blob, so don't!
         logging.info('Meta Endpoint HIT: %s' % redis_key)
-        return get_result, 200
+        return get_result, 200, {'Content-Type': 'application/json'}
     else:
         logging.info('Meta Endpoint MISS: %s' % redis_key)
         url = 'http://%s:%s%s' % (config['kairosdb']['host'], config['kairosdb']['port'], endpoint)
@@ -51,7 +52,7 @@ def metadata_caching(config, name, endpoint, post_data=None):
 
         except requests.exceptions.RequestException as e:
             logging.error('BackendQueryFailure: %s' % e.message)
-            return json.dumps({'error': 'Could not connect to KairosDB: %s' % e.message}), 500
+            return json.dumps({'error': 'Could not connect to KairosDB: %s' % e.message}), 500, {'Content-Type': 'application/json'}
 
         if kairos_result.status_code / 100 != 2:
             # propagate the kairos message to the user along with its error code.
@@ -60,7 +61,7 @@ def metadata_caching(config, name, endpoint, post_data=None):
             message = 'Meta Endpoint: %s: KairosDB responded %d: %s' % (redis_key,
                                                                         kairos_result.status_code,
                                                                         value_message)
-            return json.dumps({'error': message}), 500
+            return json.dumps({'error': message}), 500, {'Content-Type': 'application/json'}
         else:
             # kairos response seems to be okay
             expiry = config['expiry'].get(name, 300)  # 5 minute default
@@ -78,8 +79,17 @@ def metadata_caching(config, name, endpoint, post_data=None):
 
 @app.route('/api/v1/metricnames', methods=['GET'])
 def handle_metricnames():
-    return metadata_caching(app.config['tscached'], 'metricnames', '/api/v1/metricnames')
-
+    text, code, type = metadata_caching(app.config['tscached'], 'metricnames', '/api/v1/metricnames')
+    nameFilter = request.args.get('containing')
+    if (nameFilter) :
+        nameFilter = nameFilter.lower()
+        regex = re.compile(nameFilter)
+        value = json.loads(text)
+        metrics = value.get('results')
+        metrics = [elem for elem in metrics if regex.search(elem.lower()) is not None]
+        value['results'] = metrics
+        text = json.dumps(value)
+    return text, code, type
 
 @app.route('/api/v1/tagnames', methods=['GET'])
 def handle_tagnames():
