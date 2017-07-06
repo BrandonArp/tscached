@@ -14,10 +14,10 @@ class MTS(DataCache):
         self.query_mask = {}
 
         # TODO make these configurable
-        self.gc_expiry = 12600  # three and a half hours
-        self.expiry = 10800  # three hours
+        self.gc_expiry = 7 * 60 * 60  # three and a half hours
+        self.expiry = 6.5 * 60 *60  # three hours
         self.acceptable_skew = 6
-        self.expected_resolution = 10000  # in ms
+        self.expected_resolution = 60000  # in ms
 
     @classmethod
     def from_result(cls, results, redis_client, kquery):
@@ -62,17 +62,17 @@ class MTS(DataCache):
             The second threshold (gc_expiry) prevents frequent (and expensive!) list slicing.
             :return: False if no change; datetime.datetime of new beginning otherwise.
         """
-        #if not self.result or len(self.result['values']) == 0:
-        #    logging.error('ttl_expire: MTS None, or contained no data points! ' + self.get_key())
-        #    return False
+        if not self.result or len(self.result['values']) == 0:
+            logging.error('ttl_expire: MTS None, or contained no data points! ' + self.get_key())
+            return False
 
-        #first_value_dt = datetime.datetime.fromtimestamp(self.result['values'][0][0] / 1000)
-        #gc_expiry_dt = datetime.datetime.now() - datetime.timedelta(seconds=self.gc_expiry)
-        #if first_value_dt < gc_expiry_dt:
-        #    logging.info('Expiring old data for MTS ' + self.get_key())
-        #    expiry_dt = datetime.datetime.now() - datetime.timedelta(seconds=self.expiry)
-        #    self.result['values'] = list(self.robust_trim(expiry_dt, end=None))
-        #    return expiry_dt
+        first_value_dt = datetime.datetime.fromtimestamp(self.result['values'][0][0] / 1000)
+        gc_expiry_dt = datetime.datetime.now() - datetime.timedelta(seconds=self.gc_expiry)
+        if first_value_dt < gc_expiry_dt:
+            logging.info('Expiring old data for MTS ' + self.get_key())
+            expiry_dt = datetime.datetime.now() - datetime.timedelta(seconds=self.expiry)
+            self.result['values'] = list(self.robust_trim(expiry_dt, end=None))
+            return expiry_dt
         return False
 
     def merge_at_end(self, new_mts, cutoff=10):

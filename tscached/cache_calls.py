@@ -178,30 +178,29 @@ def warm(config, redis_client, kquery, kairos_time_range, range_needed):
                 end_times.append(range_needed[1])
                 old_mts.merge_at_end(mts)
 
+                response_kquery = old_mts.build_response(kairos_time_range, response_kquery)
                 # This seems the only case where too-old data should be removed.
                 expiry = old_mts.ttl_expire()
                 if expiry:
-                    logging.info("evicted data")
                     # We need to make sure there are no entries before expiry since we've deleted the data.
                     start_times = [elem for elem in start_times if elem > expiry]
                     start_times.append(expiry)
-                    logging.info("new expiry = %s" % (expiry))
+                pipeline.set(old_mts.get_key(), json.dumps(old_mts.result), ex=old_mts.expiry)
 
             elif range_needed[2] == FETCH_BEFORE:
                 start_times.append(range_needed[0])
                 old_mts.merge_at_beginning(mts)
+                pipeline.set(old_mts.get_key(), json.dumps(old_mts.result), ex=old_mts.expiry)
+                response_kquery = old_mts.build_response(kairos_time_range, response_kquery)
             else:
                 logging.error("WARM is not equipped for this range_needed attrib: %s" % range_needed[2])
                 return response_kquery
 
-            pipeline.set(old_mts.get_key(), json.dumps(old_mts.result), ex=old_mts.expiry)
-            response_kquery = old_mts.build_response(kairos_time_range, response_kquery)
     try:
         result = pipeline.execute()
         success_count = len(filter(lambda x: x is True, result))
         logging.info("MTS write pipeline: %d of %d successful" % (success_count, len(result)))
 
-        logging.info("modifying kquery with start_times = %s" % (start_times))
         kquery.upsert(min(start_times), max(end_times))
     except redis.exceptions.RedisError as e:
         # Sneaky edge case where Redis fails after reading but before writing. Still return data!
