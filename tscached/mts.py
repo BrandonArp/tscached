@@ -14,8 +14,8 @@ class MTS(DataCache):
         self.query_mask = {}
 
         # TODO make these configurable
-        self.gc_expiry = 7 * 60 * 60  # three and a half hours
-        self.expiry = 6.5 * 60 *60  # three hours
+        self.gc_expiry = int(7 * 60 * 60)  # three and a half hours
+        self.expiry = int(6.5 * 60 * 60)  # three hours
         self.acceptable_skew = 6
         self.expected_resolution = 60000  # in ms
 
